@@ -344,7 +344,6 @@ class APRtspRoot(resource.Resource):
 	def render_FLUSH(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		
-		# FIX: hairport seem doesn't like it very much... and the streaming stuck
 		if self.process is not None and self.process.poll() is None:
 			self.process.stdin.write("flush\n")
 			
