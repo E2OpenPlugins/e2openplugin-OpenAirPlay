@@ -591,8 +591,23 @@ class APServer():
 		
 	def start(self):
 		self.zeroconf.publish()
-		self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite)
-		self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite)
+		try:
+			self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite)
+		except Exception, e:
+			self.atconn = None
+			self.apconn = None
+			print "[SIFTeam OpenAirPlay] cannot start airtunes server"
+			return
+			
+		try:
+			self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite)
+		except Exception, e:
+			self.atconn.stopListening()
+			self.atconn = None
+			self.apconn = None
+			print "[SIFTeam OpenAirPlay] cannot start airplay server"
+			return
+			
 		print "[SIFTeam OpenAirPlay] server started"
 		
 	def stop(self):
