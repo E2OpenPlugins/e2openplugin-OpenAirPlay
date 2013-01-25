@@ -34,6 +34,7 @@ import base64
 import subprocess
 import StringIO
 import urlparse
+import socket
 
 AIRPLAY_PORT = 22555
 AIRTUNES_PORT = 22556
@@ -223,9 +224,14 @@ class APRtspRoot(resource.Resource):
 			
 			data = base64.b64decode(challenge)
 			
-			ip = request.getHost().host.split(".")
-			for item in ip:
-				data += chr(int(item))
+			host = request.getHost().host
+			
+			if (host.split(".")) == 4:	# ipv4
+				data += socket.inet_pton(socket.AF_INET, host)
+			elif host[:7] == "::ffff:":
+				data += socket.inet_pton(socket.AF_INET, host[7:])
+			else:
+				data += socket.inet_pton(socket.AF_INET6, host.split("%")[0])
 				
 			hwaddr = self.info.deviceid
 			for i in range (0, 12, 2):
@@ -592,21 +598,35 @@ class APServer():
 	def start(self):
 		self.zeroconf.publish()
 		try:
-			self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite)
-		except Exception, e:
+			self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite, interface="::")
+		except Exception:
+			print "[SIFTeam OpenAirPlay] cannot bind airtunes server on ipv6 interface"
 			self.atconn = None
-			self.apconn = None
-			print "[SIFTeam OpenAirPlay] cannot start airtunes server"
-			return
+			
+		if self.atconn is None:
+			try:
+				self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite)
+			except Exception:
+				self.atconn = None
+				self.apconn = None
+				print "[SIFTeam OpenAirPlay] cannot start airtunes server"
+				return
 			
 		try:
-			self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite)
-		except Exception, e:
-			self.atconn.stopListening()
-			self.atconn = None
+			self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite, interface="::")
+		except Exception:
+			print "[SIFTeam OpenAirPlay] cannot bind airplay server on ipv6 interface"
 			self.apconn = None
-			print "[SIFTeam OpenAirPlay] cannot start airplay server"
-			return
+			
+		if self.apconn is None:
+			try:
+				self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite)
+			except Exception:
+				self.atconn.stopListening()
+				self.atconn = None
+				self.apconn = None
+				print "[SIFTeam OpenAirPlay] cannot start airplay server"
+				return
 			
 		print "[SIFTeam OpenAirPlay] server started"
 		
