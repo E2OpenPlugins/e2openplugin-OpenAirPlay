@@ -35,10 +35,10 @@ global_airplay = None
 class OpenAirPlayConfig(Screen, ConfigListScreen):
 	skin = """
 	<screen position="center,center" size="560,400" title="SIFTeam OpenAirPlay Configuration">
-		<ePixmap name="red" pixmap="skin_default/buttons/red.png" position="0,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
-		<ePixmap name="green" pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
-		<ePixmap name="yellow" pixmap="skin_default/buttons/yellow.png" position="280,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
-		<ePixmap name="blue" pixmap="skin_default/buttons/blue.png" position="420,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
+		<ePixmap name="red" pixmap="buttons/red.png" position="0,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
+		<ePixmap name="green" pixmap="buttons/green.png" position="140,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
+		<ePixmap name="yellow" pixmap="buttons/yellow.png" position="280,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
+		<ePixmap name="blue" pixmap="buttons/blue.png" position="420,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
 		
 		<widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
 		<widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
