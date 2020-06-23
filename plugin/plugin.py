@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # SIFTeam OpenAirPlay
 # Copyright (C) <2012> skaman (SIFTeam)
 #
@@ -24,7 +25,7 @@ from Components.ActionMap import ActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.config import config, getConfigListEntry, ConfigSubsection, ConfigYesNo
 
-from airplay import AirPlay
+from .airplay import AirPlay
 
 config.OpenAirPlay = ConfigSubsection()
 config.OpenAirPlay.enabled = ConfigYesNo(default=True)

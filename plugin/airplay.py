@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 # SIFTeam OpenAirPlay
 # Copyright (C) <2012> skaman (SIFTeam)
 #
@@ -25,7 +27,7 @@ from Components.ActionMap import ActionMap
 from Components.AVSwitch import AVSwitch
 from Components.ServiceEventTracker import ServiceEventTracker
 
-from airplayserver import APServer, APCallbacks
+from .airplayserver import APServer, APCallbacks
 
 class AirPlayPhoto(Screen):
 	skin = """
@@ -46,7 +48,7 @@ class AirPlayPhoto(Screen):
 			self["image"].show()
 			
 	def load(self, data):
-		open("/tmp/airphoto.jpg" , "w").write(data)
+		open("/tmp/airphoto.jpg", "w").write(data)
 		#sc = AVSwitch().getFramebufferScale()
 		self.picload.setPara((self["image"].instance.size().width(), self["image"].instance.size().height(), 1, 1, False, 1, "#FF000000"))
 		self.picload.startDecode("/tmp/airphoto.jpg")
@@ -188,7 +190,7 @@ class AirPlayVideo(Screen):
 			return
 			
 		if not seek.isCurrentlySeekable():
-			print "[SIFTeam OpenAirPlay] service not currently seekable"
+			print("[SIFTeam OpenAirPlay] service not currently seekable")
 			return
 			
 		seek.seekTo(int(position * 90000))
@@ -228,7 +230,7 @@ class AirPlay():
 			self.current = self.session.open(AirPlayPhoto)
 			
 		if self.current.__class__.__name__ != "AirPlayPhoto":
-			print "[SIFTeam OpenAirPlay] is it busy with other contents?"
+			print("[SIFTeam OpenAirPlay] is it busy with other contents?")
 			return
 			
 		self.current.load(data)
@@ -255,7 +257,7 @@ class AirPlay():
 				self.current.exit()
 				return
 			else:
-				print "[SIFTeam OpenAirPlay] is it busy with other contents?"
+				print("[SIFTeam OpenAirPlay] is it busy with other contents?")
 				return
 			
 		self.current.open(url)

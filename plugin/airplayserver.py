@@ -1,3 +1,4 @@
+from __future__ import print_function
 # SIFTeam OpenAirPlay
 # Copyright (C) <2012> skaman (SIFTeam)
 #
@@ -209,7 +210,7 @@ class APRtspRoot(resource.Resource):
 			dmp += "0x%x " % ord(ch)
 			
 		dmp = dmp.strip()
-		print dmp
+		print(dmp)
 			
 	def prepareBaseReply(self, request):
 		request.setETag("RTSP/1.0")
@@ -247,7 +248,7 @@ class APRtspRoot(resource.Resource):
 			request.setHeader("apple-response", signature)
 		
 	def render_OPTIONS(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		
 		self.prepareBaseReply(request)
 		request.setHeader("public", "ANNOUNCE, SETUP, RECORD, PAUSE, FLUSH, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER")
@@ -255,7 +256,7 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_ANNOUNCE(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 
 		self.prepareBaseReply(request)
 		
@@ -287,7 +288,7 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_SETUP(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		
 		self.prepareBaseReply(request)
 		
@@ -342,13 +343,13 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_RECORD(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
 		
 	def render_FLUSH(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		
 		if self.process is not None and self.process.poll() is None:
 			self.process.stdin.write("flush\n")
@@ -358,7 +359,7 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_TEARDOWN(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		
 		if self.process != None and self.process.poll() == None:
 			self.process.stdin.write("exit\n")
@@ -373,7 +374,7 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_SET_PARAMETER(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		buff = request.content.read().split("\n")
 		for row in buff:
 			if row[:7] == "volume:":
@@ -385,13 +386,13 @@ class APRtspRoot(resource.Resource):
 		request.finish()
 		
 	def render_GET_PARAMETER(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
 		
 	def render_DENIED(self, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
@@ -405,7 +406,7 @@ class APWebRoot(resource.Resource):
 		self.info = info
 		
 	def getChild(self, path, request):
-		print "[SIFTeam OpenAirPlay] " + str(request)
+		print("[SIFTeam OpenAirPlay] " + str(request))
 		if path == "server-info":
 			return APWebServerInfo(self.callbacks, self.info)
 		elif path == "reverse":
@@ -429,7 +430,7 @@ class APWebRoot(resource.Resource):
 		elif path == "getProperty":
 			return APWebGetProperty(self.callbacks, self.info)
 		
-		print "[SIFTeam OpenAirPlay] the api '%s' is not yet implemented" % path
+		print("[SIFTeam OpenAirPlay] the api '%s' is not yet implemented" % path)
 		return APWebNotFound(self.callbacks, self.info)
 		
 class APWebBase(resource.Resource):
@@ -502,7 +503,7 @@ class APWebPlay(APWebBase):
 			plist = readPlist(tmp)
 			url = plist["Content-Location"]
 			startposition = float(plist["Start-Position"])
-		except (InvalidPlistException, NotBinaryPlistException), e:
+		except (InvalidPlistException, NotBinaryPlistException) as e:
 			startposition = 0.0
 			for row in content.split("\n"):
 				row = row.strip()
@@ -600,7 +601,7 @@ class APServer():
 		try:
 			self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite, interface="::")
 		except Exception:
-			print "[SIFTeam OpenAirPlay] cannot bind airtunes server on ipv6 interface"
+			print("[SIFTeam OpenAirPlay] cannot bind airtunes server on ipv6 interface")
 			self.atconn = None
 			
 		if self.atconn is None:
@@ -609,13 +610,13 @@ class APServer():
 			except Exception:
 				self.atconn = None
 				self.apconn = None
-				print "[SIFTeam OpenAirPlay] cannot start airtunes server"
+				print("[SIFTeam OpenAirPlay] cannot start airtunes server")
 				return
 			
 		try:
 			self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite, interface="::")
 		except Exception:
-			print "[SIFTeam OpenAirPlay] cannot bind airplay server on ipv6 interface"
+			print("[SIFTeam OpenAirPlay] cannot bind airplay server on ipv6 interface")
 			self.apconn = None
 			
 		if self.apconn is None:
@@ -625,10 +626,10 @@ class APServer():
 				self.atconn.stopListening()
 				self.atconn = None
 				self.apconn = None
-				print "[SIFTeam OpenAirPlay] cannot start airplay server"
+				print("[SIFTeam OpenAirPlay] cannot start airplay server")
 				return
 			
-		print "[SIFTeam OpenAirPlay] server started"
+		print("[SIFTeam OpenAirPlay] server started")
 		
 	def stop(self):
 		self.zeroconf.unpublish()
@@ -636,5 +637,5 @@ class APServer():
 			self.atconn.stopListening()
 		if self.apconn is not None:
 			self.apconn.stopListening()
-		print "[SIFTeam OpenAirPlay] server stopped"
+		print("[SIFTeam OpenAirPlay] server stopped")
 		
