@@ -234,7 +234,7 @@ class APRtspRoot(resource.Resource):
 				data += socket.inet_pton(socket.AF_INET6, host.split("%")[0])
 				
 			hwaddr = self.info.deviceid
-			for i in range (0, 12, 2):
+			for i in range(0, 12, 2):
 				data += chr(int(hwaddr[i:i+2], 16))
 			
 			data = data.ljust(32, '\0')

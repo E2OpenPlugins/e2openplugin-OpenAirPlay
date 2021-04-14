@@ -46,7 +46,7 @@ class AirPlayPhoto(Screen):
 			self["image"].show()
 			
 	def load(self, data):
-		open("/tmp/airphoto.jpg" , "w").write(data)
+		open("/tmp/airphoto.jpg", "w").write(data)
 		#sc = AVSwitch().getFramebufferScale()
 		self.picload.setPara((self["image"].instance.size().width(), self["image"].instance.size().height(), 1, 1, False, 1, "#FF000000"))
 		self.picload.startDecode("/tmp/airphoto.jpg")
