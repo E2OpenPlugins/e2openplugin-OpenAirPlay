@@ -40,43 +40,43 @@ class OpenAirPlayConfig(Screen, ConfigListScreen):
 		<ePixmap name="green" pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
 		<ePixmap name="yellow" pixmap="skin_default/buttons/yellow.png" position="280,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
 		<ePixmap name="blue" pixmap="skin_default/buttons/blue.png" position="420,0" size="140,40" zPosition="0" transparent="1" alphatest="on" />
-		
+
 		<widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
 		<widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
 		<widget name="key_yellow" position="280,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
 		<widget name="key_blue" position="420,0" size="140,40" valign="center" halign="center" zPosition="1" transparent="1" foregroundColor="white" font="Regular;18" />
-		
+
 		<widget name="config" position="10,50" size="540,240" scrollbarMode="showOnDemand" />
 	</screen>"""
-	
+
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		ConfigListScreen.__init__(self, [])
-		
+
 		self["key_red"] = Button(_("Cancel"))
 		self["key_green"] = Button(_("Save"))
 		self["key_yellow"] = Button("")
 		self["key_blue"] = Button("")
-		
+
 		self["actions"] = ActionMap(["WizardActions", "ColorActions"],
 		{
 			"red": self.keyCancel,
 			"back": self.keyCancel,
 			"green": self.ok
 		}, -2)
-		
+
 		self.list = []
 		self.list.append(getConfigListEntry(_("OpenAirPlay Enabled"), config.OpenAirPlay.enabled))
 		self["config"].setList(self.list)
-		
+
 	def ok(self):
 		self.keySave()
-		
+
 		if config.OpenAirPlay.enabled.value:
 			startServer()
 		else:
 			stopServer()
-			
+
 		self.close()
 
 
@@ -87,18 +87,18 @@ def startConfiguration(session, **kwargs):
 def startServer():
 	global global_session
 	global global_airplay
-	
+
 	if global_session is None:
 		return
-		
+
 	if global_airplay is None:
 		global_airplay = AirPlay(global_session)
 		global_airplay.start()
-	
+
 
 def stopServer():
 	global global_airplay
-	
+
 	if global_airplay is not None:
 		global_airplay.stop()
 		global_airplay = None
@@ -108,7 +108,7 @@ def autoStart(reason, **kwargs):
 	# we use autostart only for stop server... the start is handled on networkConfigRead
 	if reason == 1:
 		stopServer()
-		
+
 
 def networkConfigRead(reason, **kwargs):
 	if reason is True:
@@ -116,7 +116,7 @@ def networkConfigRead(reason, **kwargs):
 			startServer()
 	else:
 		stopServer()
-		
+
 
 def sessionStart(reason, session):
 	global global_session
@@ -128,5 +128,3 @@ def Plugins(**kwargs):
 		PluginDescriptor(where=[PluginDescriptor.WHERE_AUTOSTART], fnc=autoStart),
 		PluginDescriptor(where=[PluginDescriptor.WHERE_NETWORKCONFIG_READ], fnc=networkConfigRead),
 		PluginDescriptor(name="OpenAirPlay", description="SIFTeam OpenAirPlay Configuration", icon="openairplay.png", where=[PluginDescriptor.WHERE_PLUGINMENU], fnc=startConfiguration)]
-
-
