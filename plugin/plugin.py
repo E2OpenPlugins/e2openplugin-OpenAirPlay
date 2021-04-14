@@ -32,6 +32,7 @@ config.OpenAirPlay.enabled = ConfigYesNo(default=True)
 global_session = None
 global_airplay = None
 
+
 class OpenAirPlayConfig(Screen, ConfigListScreen):
 	skin = """
 	<screen position="center,center" size="560,400" title="SIFTeam OpenAirPlay Configuration">
@@ -78,8 +79,10 @@ class OpenAirPlayConfig(Screen, ConfigListScreen):
 			
 		self.close()
 
+
 def startConfiguration(session, **kwargs):
 		session.open(OpenAirPlayConfig)
+
 
 def startServer():
 	global global_session
@@ -92,6 +95,7 @@ def startServer():
 		global_airplay = AirPlay(global_session)
 		global_airplay.start()
 	
+
 def stopServer():
 	global global_airplay
 	
@@ -99,11 +103,13 @@ def stopServer():
 		global_airplay.stop()
 		global_airplay = None
 
+
 def autoStart(reason, **kwargs):
 	# we use autostart only for stop server... the start is handled on networkConfigRead
 	if reason == 1:
 		stopServer()
 		
+
 def networkConfigRead(reason, **kwargs):
 	if reason is True:
 		if config.OpenAirPlay.enabled.value:
@@ -111,9 +117,11 @@ def networkConfigRead(reason, **kwargs):
 	else:
 		stopServer()
 		
+
 def sessionStart(reason, session):
 	global global_session
 	global_session = session
+
 
 def Plugins(**kwargs):
 	return [PluginDescriptor(where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=sessionStart),

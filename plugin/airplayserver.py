@@ -130,6 +130,7 @@ PLAYBACK_INFO_NOT_READY_TEMPLATE = '<?xml version="1.0" encoding="UTF-8"?>\
 </dict>\
 </plist>'
 
+
 class APZeroConf():
 	def __init__(self, info):
 		self.info = info
@@ -170,10 +171,12 @@ class APZeroConf():
 		if self.group is not None:
 			self.group.Reset()
 			
+
 class RTSPRequest(http.Request):
 	def process(self):
 		self.channel.site.resource.render(self)
 		
+
 class RTSPChannel(http.HTTPChannel):
 	requestFactory = RTSPRequest
 	
@@ -182,18 +185,22 @@ class RTSPChannel(http.HTTPChannel):
 			return 1
 		return 0
 		
+
 class RTSPSite(server.Site):
 	protocol = RTSPChannel
 	requestFactory = RTSPRequest
 	
+
 class APInfo():
 	def __init__(self):
 		self.deviceid = "%012X" % uuid.getnode()
 		self.features = 0x77
 		self.model = "AppleTV2,1"
 
+
 class APRtspRoot(resource.Resource):
 	isLeaf = True
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
@@ -399,6 +406,7 @@ class APRtspRoot(resource.Resource):
 
 class APWebRoot(resource.Resource):
 	isLeaf = False
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
@@ -432,8 +440,10 @@ class APWebRoot(resource.Resource):
 		print "[SIFTeam OpenAirPlay] the api '%s' is not yet implemented" % path
 		return APWebNotFound(self.callbacks, self.info)
 		
+
 class APWebBase(resource.Resource):
 	isLeaf = True
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
@@ -453,34 +463,40 @@ class APWebBase(resource.Resource):
 		request.write(body)
 		request.finish()
 		
+
 class APWebNotFound(APWebBase):
 	def render(self, request):
 		self.commonRender(request, "", 404)
 		return server.NOT_DONE_YET
 		
+
 class APWebReverse(APWebBase):
 	def render(self, request):
 		self.commonRender(request, "", 101)
 		return server.NOT_DONE_YET
 		
+
 class APWebSlideShowFeatures(APWebBase):
 	def render(self, request):
 		# ?? UNKNOW!
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebServerInfo(APWebBase):
 	def render(self, request):
 		request.setHeader("content-type", "text/x-apple-plist+xml")
 		self.commonRender(request, SERVER_INFO_TEMPLATE % (self.info.deviceid, self.info.features, self.info.model))
 		return server.NOT_DONE_YET
 		
+
 class APWebStop(APWebBase):
 	def render(self, request):
 		self.callbacks.stop()
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebPhoto(APWebBase):
 	def render(self, request):
 		request.setResponseCode(200)
@@ -489,6 +505,7 @@ class APWebPhoto(APWebBase):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebPlay(APWebBase):
 	def render(self, request):
 		request.setResponseCode(200)
@@ -520,6 +537,7 @@ class APWebPlay(APWebBase):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebRate(APWebBase):
 	def render(self, request):
 		if 'value' in request.args:
@@ -531,6 +549,7 @@ class APWebRate(APWebBase):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebScrub(APWebBase):
 	def render_GET(self, request):
 		position = self.callbacks.videoGetPosition()
@@ -547,6 +566,7 @@ class APWebScrub(APWebBase):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebPlaybackInfo(APWebBase):
 	def render(self, request):
 		info = self.callbacks.videoGetPosition()
@@ -559,15 +579,18 @@ class APWebPlaybackInfo(APWebBase):
 		self.commonRender(request, body)
 		return server.NOT_DONE_YET
 		
+
 class APWebSetProperty(APWebBase):
 	def render(self, request):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
 		
+
 class APWebGetProperty(APWebBase):
 	def render(self, request):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
+
 
 class APCallbacks():
 	def __init__(self):
@@ -581,6 +604,7 @@ class APCallbacks():
 		self.stop = None
 		self.stopAudio = None
 		
+
 class APServer():
 	def __init__(self, apcb):
 		self.atconn = None

@@ -27,6 +27,7 @@ from Components.ServiceEventTracker import ServiceEventTracker
 
 from airplayserver import APServer, APCallbacks
 
+
 class AirPlayPhoto(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder">
@@ -54,6 +55,7 @@ class AirPlayPhoto(Screen):
 	def exit(self):
 		self.close()
 
+
 class AirPlayAudio(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder">
@@ -69,6 +71,7 @@ class AirPlayAudio(Screen):
 			self.session.nav.playService(self.serviceref)
 		self.close()
 		
+
 class AirPlayVideo(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder" backgroundColor="#FF000000">
@@ -199,6 +202,7 @@ class AirPlayVideo(Screen):
 			self.session.nav.playService(self.serviceref)
 		self.close()
 		
+
 class AirPlay():
 	def __init__(self, session):
 		self.session = session
