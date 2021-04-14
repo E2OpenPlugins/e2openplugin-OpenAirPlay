@@ -235,7 +235,7 @@ class APRtspRoot(resource.Resource):
 				
 			hwaddr = self.info.deviceid
 			for i in range(0, 12, 2):
-				data += chr(int(hwaddr[i:i+2], 16))
+				data += chr(int(hwaddr[i:i + 2], 16))
 			
 			data = data.ljust(32, '\0')
 			#self.dump(data)
@@ -268,7 +268,7 @@ class APRtspRoot(resource.Resource):
 			row = row[2:]
 			seppos = row.find(":")
 			key = row[:seppos].strip()
-			value = row[seppos+1:].strip()
+			value = row[seppos + 1:].strip()
 		
 			if key == "aesiv" or key == "rsaaeskey":
 				if value[-2:] != "==":
@@ -302,7 +302,7 @@ class APRtspRoot(resource.Resource):
 					continue
 					
 				key = row[:seppos].strip()
-				value = row[seppos+1:].strip()
+				value = row[seppos + 1:].strip()
 				
 				if key == "timing_port":
 					timing_port = int(value)
@@ -508,7 +508,7 @@ class APWebPlay(APWebBase):
 				row = row.strip()
 				seppos = row.find(":")
 				key = row[:seppos].strip()
-				value = row[seppos+1:].strip()
+				value = row[seppos + 1:].strip()
 				if key == "Content-Location":
 					url = value
 				elif key == "Start-Position":
