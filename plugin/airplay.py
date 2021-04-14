@@ -27,53 +27,56 @@ from Components.ServiceEventTracker import ServiceEventTracker
 
 from airplayserver import APServer, APCallbacks
 
+
 class AirPlayPhoto(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder">
 			<widget name="image" position="20,20" size="e-40,e-40" />
 		</screen>"""
-		
+
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		self["image"] = Pixmap()
 		self.picload = ePicLoad()
 		self.picload.PictureData.get().append(self.__showPic)
-		
+
 	def __showPic(self, picInfo=""):
 		ptr = self.picload.getData()
 		if ptr != None:
 			self["image"].instance.setPixmap(ptr.__deref__())
 			self["image"].show()
-			
+
 	def load(self, data):
-		open("/tmp/airphoto.jpg" , "w").write(data)
+		open("/tmp/airphoto.jpg", "w").write(data)
 		#sc = AVSwitch().getFramebufferScale()
 		self.picload.setPara((self["image"].instance.size().width(), self["image"].instance.size().height(), 1, 1, False, 1, "#FF000000"))
 		self.picload.startDecode("/tmp/airphoto.jpg")
-		
+
 	def exit(self):
 		self.close()
+
 
 class AirPlayAudio(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder">
 		</screen>"""
-		
+
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		self.serviceref = self.session.nav.getCurrentlyPlayingServiceReference()
 		self.session.nav.stopService()
-		
+
 	def exit(self):
 		if self.serviceref is not None:
 			self.session.nav.playService(self.serviceref)
 		self.close()
-		
+
+
 class AirPlayVideo(Screen):
 	skin = """
 		<screen position="0,0" size="e,e" flags="wfNoBorder" backgroundColor="#FF000000">
 		</screen>"""
-		
+
 	def __init__(self, session):
 		Screen.__init__(self, session)
 		self.videomodes = ["4_3_letterbox", "4_3_panscan", "16_9", "16_9_always", "16_10_letterbox", "16_10_panscan", "16_9_letterbox"]
@@ -82,7 +85,7 @@ class AirPlayVideo(Screen):
 		self.session.nav.stopService()
 		self.paused = True
 		self.position = 0
-		
+
 		self["setupActions"] = ActionMap(["ColorActions"],
 		{
 			"green": self.changeVideoMode
@@ -96,109 +99,110 @@ class AirPlayVideo(Screen):
 			aspectnum = 0
 		iAVSwitch.setAspectRatio(aspectnum)
 		config.av.aspectratio.setValue(self.videomodes[aspectnum])
-		
+
 	def open(self, url):
 		self.session.nav.playService(eServiceReference(4097, 0, url))
 		self.paused = False
-		
+
 	def play(self):
 		service = self.session.nav.getCurrentService()
 		if service is None:
 			return
-			
+
 		pauseable = service.pause()
 		if pauseable is None:
 			return
-			
+
 		pauseable.unpause()
 		self.paused = False
 		if self.position != 0:
 			self.setPosition(self.position)
-		
+
 	def pause(self):
 		service = self.session.nav.getCurrentService()
 		if service is None:
 			return
-			
+
 		pauseable = service.pause()
 		if pauseable is None:
 			return
-			
+
 		pauseable.pause()
 		self.paused = True
-		
+
 	def getPosition(self):
 		service = self.session.nav.getCurrentService()
 		if service is None:
 			return None
-		
+
 		seek = service.seek()
 		if seek is None:
 			return None
-		
+
 		length = 0.0
 		position = 0.0
 		llength = seek.getLength()
 		lposition = seek.getPlayPosition()
-		
+
 		if not llength[0]:
 			length = float(llength[1]) / 90000.0
-		
+
 		if self.paused:
 			position = self.position
 		elif not lposition[0]:
 			position = float(lposition[1]) / 90000.0
-			
+
 		if position < 0.0:
 			position = 0.0
-			
+
 		if length < 0.0:
 			length = 0.0
-			
+
 		# if near the end or over we override the position
 		if position > length - 1.0:
 			position = length
-			
+
 		loaded = 0.0
 		streamed = service.streamed()
 		if streamed is not None:
 			charge = streamed.getBufferCharge()
-			
+
 			if charge[2] != 0:
 				loaded = float(charge[4]) / float(charge[2])
-				
+
 		return {
 			"duration": length,
 			"position": position,
 			"loaded": loaded,
 			"paused": self.paused
 		}
-		
+
 	def setPosition(self, position):
 		if self.paused:
 			self.position = position
 			return
-			
+
 		service = self.session.nav.getCurrentService()
 		if service is None:
 			return
-		
+
 		seek = service.seek()
 		if seek is None:
 			return
-			
+
 		if not seek.isCurrentlySeekable():
 			print "[SIFTeam OpenAirPlay] service not currently seekable"
 			return
-			
+
 		seek.seekTo(int(position * 90000))
 		self.position = 0
-		
+
 	def exit(self):
 		if self.serviceref is not None:
 			self.session.nav.playService(self.serviceref)
 		self.close()
-		
+
+
 class AirPlay():
 	def __init__(self, session):
 		self.session = session
@@ -216,37 +220,37 @@ class AirPlay():
 		self.current = None
 		self.videorequest = False
 		self.videourl = ""
-		
+
 	def stop(self):
 		self.server.stop()
-		
+
 	def start(self):
 		self.server.start()
-		
+
 	def __photo(self, data):
 		if self.current is None:
 			self.current = self.session.open(AirPlayPhoto)
-			
+
 		if self.current.__class__.__name__ != "AirPlayPhoto":
 			print "[SIFTeam OpenAirPlay] is it busy with other contents?"
 			return
-			
+
 		self.current.load(data)
-		
+
 	def __audioClosed(self):
 		if self.videorequest:
 			self.current = self.session.open(AirPlayVideo)
 			self.current.open(self.videourl)
 			self.videorequest = False
-		
+
 	def __audio(self):
 		if self.current is None:
 			self.current = self.session.openWithCallback(self.__audioClosed, AirPlayAudio)
-		
+
 	def __video(self, url, startposition):
 		if self.current is None:
 			self.current = self.session.open(AirPlayVideo)
-			
+
 		if self.current.__class__.__name__ != "AirPlayVideo":
 			# if audio we replace it
 			if self.current.__class__.__name__ == "AirPlayAudio":
@@ -257,35 +261,34 @@ class AirPlay():
 			else:
 				print "[SIFTeam OpenAirPlay] is it busy with other contents?"
 				return
-			
+
 		self.current.open(url)
-		
+
 	def __videoPlay(self):
 		if self.current is not None and self.current.__class__.__name__ == "AirPlayVideo":
 			self.current.play()
-		
+
 	def __videoPause(self):
 		if self.current is not None and self.current.__class__.__name__ == "AirPlayVideo":
 			self.current.pause()
-		
+
 	def __videoGetPosition(self):
 		if self.current is not None and self.current.__class__.__name__ == "AirPlayVideo":
 			return self.current.getPosition()
-			
+
 		return None
-	
+
 	def __videoSetPosition(self, position):
 		if self.current is not None and self.current.__class__.__name__ == "AirPlayVideo":
 			self.current.setPosition(position)
-	
+
 	def __close(self):
 		if self.current is not None:
 			self.current.exit()
 			self.current = None
 			self.videorequest = False
-	
+
 	def __closeAudio(self):
 		if self.current is not None and self.current.__class__.__name__ == "AirPlayAudio":
 			self.current.exit()
 			self.current = None
-		

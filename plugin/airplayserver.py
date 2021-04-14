@@ -130,11 +130,12 @@ PLAYBACK_INFO_NOT_READY_TEMPLATE = '<?xml version="1.0" encoding="UTF-8"?>\
 </dict>\
 </plist>'
 
+
 class APZeroConf():
 	def __init__(self, info):
 		self.info = info
 		self.group = None
-		
+
 	def publish(self):
 		text_ap = ["deviceid=" + self.info.deviceid, "features=" + hex(self.info.features), "model=" + self.info.model]
 		text_at = ["tp=UDP", "sm=false", "sv=false", "ek=1", "et=0,1", "cn=0,1", "ch=2", "ss=16", "sr=44100", "pw=false", "vn=3", "txtvers=1"]
@@ -169,31 +170,37 @@ class APZeroConf():
 	def unpublish(self):
 		if self.group is not None:
 			self.group.Reset()
-			
+
+
 class RTSPRequest(http.Request):
 	def process(self):
 		self.channel.site.resource.render(self)
-		
+
+
 class RTSPChannel(http.HTTPChannel):
 	requestFactory = RTSPRequest
-	
+
 	def checkPersistence(self, request, version):
 		if version == "RTSP/1.0":
 			return 1
 		return 0
-		
+
+
 class RTSPSite(server.Site):
 	protocol = RTSPChannel
 	requestFactory = RTSPRequest
-	
+
+
 class APInfo():
 	def __init__(self):
 		self.deviceid = "%012X" % uuid.getnode()
 		self.features = 0x77
 		self.model = "AppleTV2,1"
 
+
 class APRtspRoot(resource.Resource):
 	isLeaf = True
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
@@ -202,78 +209,78 @@ class APRtspRoot(resource.Resource):
 		self.rsaaeskey = None
 		self.fmtp = None
 		self.process = None
-		
+
 	def dump(self, data):
 		dmp = ""
 		for ch in data:
 			dmp += "0x%x " % ord(ch)
-			
+
 		dmp = dmp.strip()
 		print dmp
-			
+
 	def prepareBaseReply(self, request):
 		request.setETag("RTSP/1.0")
 		request.setResponseCode(200)
 		request.setHeader("cseq", request.received_headers["cseq"])
 		request.setHeader("audio-jack-status", "connected; type=analog")
-		
+
 		if "apple-challenge" in request.received_headers:
 			challenge = request.received_headers["apple-challenge"]
 			if challenge[-2:] != "==":
 				challenge += "=="
-			
+
 			data = base64.b64decode(challenge)
-			
+
 			host = request.getHost().host
-			
+
 			if (host.split(".")) == 4:	# ipv4
 				data += socket.inet_pton(socket.AF_INET, host)
 			elif host[:7] == "::ffff:":
 				data += socket.inet_pton(socket.AF_INET, host[7:])
 			else:
 				data += socket.inet_pton(socket.AF_INET6, host.split("%")[0])
-				
+
 			hwaddr = self.info.deviceid
-			for i in range (0, 12, 2):
-				data += chr(int(hwaddr[i:i+2], 16))
-			
+			for i in range(0, 12, 2):
+				data += chr(int(hwaddr[i:i + 2], 16))
+
 			data = data.ljust(32, '\0')
 			#self.dump(data)
-		
+
 			key = RSA.load_key_string(AIRPORT_PRIVATE_KEY)
 			signature = base64.b64encode(key.private_encrypt(data, RSA.pkcs1_padding))
 			if signature[-2:] == "==":
 				signature = signature[:-2]
 			request.setHeader("apple-response", signature)
-		
+
 	def render_OPTIONS(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
-		
+
 		self.prepareBaseReply(request)
 		request.setHeader("public", "ANNOUNCE, SETUP, RECORD, PAUSE, FLUSH, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER")
 		request.write("")
 		request.finish()
-		
+
 	def render_ANNOUNCE(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 
 		self.prepareBaseReply(request)
-		
+
 		content = request.content.read()
 		for row in content.split("\n"):
 			row = row.strip()
 			if row[:2] != "a=":
 				continue
-				
+
 			row = row[2:]
 			seppos = row.find(":")
 			key = row[:seppos].strip()
-			value = row[seppos+1:].strip()
-		
+			value = row[seppos + 1:].strip()
+
 			if key == "aesiv" or key == "rsaaeskey":
 				if value[-2:] != "==":
 					value += "=="
-					
+
 			if key == "aesiv":
 				self.aesiv = base64.b64decode(value)
 			elif key == "rsaaeskey":
@@ -282,15 +289,15 @@ class APRtspRoot(resource.Resource):
 				self.rsaaeskey = key.private_decrypt(self.rsaaeskey, RSA.pkcs1_oaep_padding)
 			elif key == "fmtp":
 				self.fmtp = value
-		
+
 		request.write("")
 		request.finish()
-		
+
 	def render_SETUP(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
-		
+
 		self.prepareBaseReply(request)
-		
+
 		if self.aesiv is not None and self.rsaaeskey is not None and self.fmtp is not None and "transport" in request.received_headers:
 			data_port = 0
 			timing_port = 59010
@@ -300,23 +307,23 @@ class APRtspRoot(resource.Resource):
 				seppos = row.find("=")
 				if seppos == -1:
 					continue
-					
+
 				key = row[:seppos].strip()
-				value = row[seppos+1:].strip()
-				
+				value = row[seppos + 1:].strip()
+
 				if key == "timing_port":
 					timing_port = int(value)
 				elif key == "control_port":
 					control_port = int(value)
-			
+
 			aesiv = ""
 			for ch in self.aesiv:
 				aesiv += "%02X" % ord(ch)
-				
+
 			rsaaeskey = ""
 			for ch in self.rsaaeskey:
 				rsaaeskey += "%02X" % ord(ch)
-			
+
 			args = [
 				HAIRTUNES_BINARY,
 				"iv", aesiv,
@@ -333,45 +340,45 @@ class APRtspRoot(resource.Resource):
 					if buff[:6] == "port: ":
 						data_port = int(buff[6:])
 						break
-					
+
 			if data_port != 0:
 				self.callbacks.audio()
 				request.setHeader("transport", request.received_headers["transport"] + ";server_port=" + str(data_port))
 				request.setHeader("session", "DEADBEEF")
 		request.write("")
 		request.finish()
-		
+
 	def render_RECORD(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
-		
+
 	def render_FLUSH(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
-		
+
 		if self.process is not None and self.process.poll() is None:
 			self.process.stdin.write("flush\n")
-			
+
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
-		
+
 	def render_TEARDOWN(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
-		
+
 		if self.process != None and self.process.poll() == None:
 			self.process.stdin.write("exit\n")
 			self.process.wait()
 		self.process = None
-		
+
 		self.callbacks.stopAudio()
-		
+
 		self.prepareBaseReply(request)
 		request.setHeader("connection", "close")
 		request.write("")
 		request.finish()
-		
+
 	def render_SET_PARAMETER(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		buff = request.content.read().split("\n")
@@ -383,27 +390,28 @@ class APRtspRoot(resource.Resource):
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
-		
+
 	def render_GET_PARAMETER(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
-		
+
 	def render_DENIED(self, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		self.prepareBaseReply(request)
 		request.write("")
 		request.finish()
-		
+
 
 class APWebRoot(resource.Resource):
 	isLeaf = False
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
 		self.info = info
-		
+
 	def getChild(self, path, request):
 		print "[SIFTeam OpenAirPlay] " + str(request)
 		if path == "server-info":
@@ -428,59 +436,67 @@ class APWebRoot(resource.Resource):
 			return APWebSetProperty(self.callbacks, self.info)
 		elif path == "getProperty":
 			return APWebGetProperty(self.callbacks, self.info)
-		
+
 		print "[SIFTeam OpenAirPlay] the api '%s' is not yet implemented" % path
 		return APWebNotFound(self.callbacks, self.info)
-		
+
+
 class APWebBase(resource.Resource):
 	isLeaf = True
+
 	def __init__(self, callbacks, info):
 		resource.Resource.__init__(self)
 		self.callbacks = callbacks
 		self.info = info
-	
+
 	def getDateTime(self):
 		return datetime.now().strftime("%a, %d %b %Y %H:%M:%S") + " GMT"
-		
-	def commonRender(self, request, body = "", retcode = 200):
+
+	def commonRender(self, request, body="", retcode=200):
 		request.setResponseCode(retcode)
 		if retcode == 101:
 			request.setHeader("upgrade", "PTTH/1.0")
 			request.setHeader("connection", "Upgrade")
-			
+
 		request.setHeader("content-length", len(body))
 		request.setHeader("date", self.getDateTime())
 		request.write(body)
 		request.finish()
-		
+
+
 class APWebNotFound(APWebBase):
 	def render(self, request):
 		self.commonRender(request, "", 404)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebReverse(APWebBase):
 	def render(self, request):
 		self.commonRender(request, "", 101)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebSlideShowFeatures(APWebBase):
 	def render(self, request):
 		# ?? UNKNOW!
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebServerInfo(APWebBase):
 	def render(self, request):
 		request.setHeader("content-type", "text/x-apple-plist+xml")
 		self.commonRender(request, SERVER_INFO_TEMPLATE % (self.info.deviceid, self.info.features, self.info.model))
 		return server.NOT_DONE_YET
-		
+
+
 class APWebStop(APWebBase):
 	def render(self, request):
 		self.callbacks.stop()
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebPhoto(APWebBase):
 	def render(self, request):
 		request.setResponseCode(200)
@@ -488,12 +504,13 @@ class APWebPhoto(APWebBase):
 		self.callbacks.photo(buff)
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebPlay(APWebBase):
 	def render(self, request):
 		request.setResponseCode(200)
 		content = request.content.read()
-		
+
 		url = ""
 		tmp = StringIO.StringIO()
 		tmp.write(content)
@@ -508,18 +525,19 @@ class APWebPlay(APWebBase):
 				row = row.strip()
 				seppos = row.find(":")
 				key = row[:seppos].strip()
-				value = row[seppos+1:].strip()
+				value = row[seppos + 1:].strip()
 				if key == "Content-Location":
 					url = value
 				elif key == "Start-Position":
 					startposition = float(value)
-				
+
 		if url != "":
 			self.callbacks.video(url, startposition)
-			
+
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebRate(APWebBase):
 	def render(self, request):
 		if 'value' in request.args:
@@ -527,10 +545,11 @@ class APWebRate(APWebBase):
 				self.callbacks.videoPlay()
 			else:
 				self.callbacks.videoPause()
-			
+
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebScrub(APWebBase):
 	def render_GET(self, request):
 		position = self.callbacks.videoGetPosition()
@@ -540,13 +559,14 @@ class APWebScrub(APWebBase):
 			body = "duration: 0.0\r\nposition: 0.0\r\n"
 		self.commonRender(request, body)
 		return server.NOT_DONE_YET
-		
+
 	def render_POST(self, request):
 		if "position" in request.args:
 			self.callbacks.videoSetPosition(float(request.args["position"][0]))
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebPlaybackInfo(APWebBase):
 	def render(self, request):
 		info = self.callbacks.videoGetPosition()
@@ -554,20 +574,23 @@ class APWebPlaybackInfo(APWebBase):
 			body = PLAYBACK_INFO_NOT_READY_TEMPLATE
 		else:
 			body = PLAYBACK_INFO_TEMPLATE % (info["duration"], info["loaded"], info["position"], info["position"], int(not info["paused"]), info["duration"])
-			
+
 		request.setHeader("content-type", "text/x-apple-plist+xml")
 		self.commonRender(request, body)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebSetProperty(APWebBase):
 	def render(self, request):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
-		
+
+
 class APWebGetProperty(APWebBase):
 	def render(self, request):
 		self.commonRender(request)
 		return server.NOT_DONE_YET
+
 
 class APCallbacks():
 	def __init__(self):
@@ -580,21 +603,22 @@ class APCallbacks():
 		self.videoSetPosition = None
 		self.stop = None
 		self.stopAudio = None
-		
+
+
 class APServer():
 	def __init__(self, apcb):
 		self.atconn = None
 		self.apconn = None
-		
+
 		self.apcb = apcb
 		self.apinfo = APInfo()
 		self.zeroconf = APZeroConf(self.apinfo)
-		
+
 		self.atroot = APRtspRoot(self.apcb, self.apinfo)
 		self.aproot = APWebRoot(self.apcb, self.apinfo)
 		self.atsite = RTSPSite(self.atroot)
 		self.apsite = server.Site(self.aproot)
-		
+
 	def start(self):
 		self.zeroconf.publish()
 		try:
@@ -602,7 +626,7 @@ class APServer():
 		except Exception:
 			print "[SIFTeam OpenAirPlay] cannot bind airtunes server on ipv6 interface"
 			self.atconn = None
-			
+
 		if self.atconn is None:
 			try:
 				self.atconn = reactor.listenTCP(AIRTUNES_PORT, self.atsite)
@@ -611,13 +635,13 @@ class APServer():
 				self.apconn = None
 				print "[SIFTeam OpenAirPlay] cannot start airtunes server"
 				return
-			
+
 		try:
 			self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite, interface="::")
 		except Exception:
 			print "[SIFTeam OpenAirPlay] cannot bind airplay server on ipv6 interface"
 			self.apconn = None
-			
+
 		if self.apconn is None:
 			try:
 				self.apconn = reactor.listenTCP(AIRPLAY_PORT, self.apsite)
@@ -627,9 +651,9 @@ class APServer():
 				self.apconn = None
 				print "[SIFTeam OpenAirPlay] cannot start airplay server"
 				return
-			
+
 		print "[SIFTeam OpenAirPlay] server started"
-		
+
 	def stop(self):
 		self.zeroconf.unpublish()
 		if self.atconn is not None:
@@ -637,4 +661,3 @@ class APServer():
 		if self.apconn is not None:
 			self.apconn.stopListening()
 		print "[SIFTeam OpenAirPlay] server stopped"
-		
