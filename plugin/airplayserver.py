@@ -442,7 +442,7 @@ class APWebBase(resource.Resource):
 	def getDateTime(self):
 		return datetime.now().strftime("%a, %d %b %Y %H:%M:%S") + " GMT"
 		
-	def commonRender(self, request, body = "", retcode = 200):
+	def commonRender(self, request, body="", retcode=200):
 		request.setResponseCode(retcode)
 		if retcode == 101:
 			request.setHeader("upgrade", "PTTH/1.0")
